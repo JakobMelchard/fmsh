@@ -11,7 +11,7 @@ typed; every candidate starts with it. `-c` adds a notes file as context. Exit 2
 unavailable. Needs macOS 26 on Apple silicon with Apple Intelligence on. Nothing leaves the machine.
 
 ```sh
-curl -fsSL https://github.com/JakobMelchard/fmsh/releases/latest/download/fmsh -o ~/.local/bin/fmsh && chmod +x ~/.local/bin/fmsh
+mkdir -p ~/.local/bin && curl -fsSL https://github.com/JakobMelchard/fmsh/releases/latest/download/fmsh -o ~/.local/bin/fmsh && chmod +x ~/.local/bin/fmsh
 ```
 
 zsh, ctrl-x ctrl-x: describe the command in nvim, pick the answer in fzf, it lands in the prompt.
