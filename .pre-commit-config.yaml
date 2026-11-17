@@ -17,4 +17,3 @@ repos:
       - id: conventional-commit
       - id: shell-syntax
       - id: swift-format
-      - id: xcodegen

@@ -13,8 +13,10 @@ jobs:
   ci:
     uses: JakobMelchard/.github/.github/workflows/xcode.yml@df18859960a81d988ca3c7498bdd6a2dc976fec9 # v2.6.0
     with:
-      scheme: Fmsh
+      runs-on: macos-26   # macOS 26 SDK for FoundationModels
+      generate-cmd: ""
       destination: platform=macOS
+      test-cmd: swift build -c release && (.build/release/fmsh x || [ $? -eq 2 ])
 
   hooks:
     uses: JakobMelchard/.github/.github/workflows/hooks.yml@df18859960a81d988ca3c7498bdd6a2dc976fec9 # v2.6.0
