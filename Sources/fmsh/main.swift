@@ -1,11 +1,31 @@
 import Foundation
 import FoundationModels
 
+func loadInstructions() -> String {
+  let env = ProcessInfo.processInfo.environment
+  if let path = env["FMSH_INSTRUCTIONS"], !path.isEmpty {
+    guard let text = try? String(contentsOfFile: path, encoding: .utf8) else {
+      FileHandle.standardError.write(Data("fmsh: \(path): cannot read instructions\n".utf8))
+      exit(1)
+    }
+    return text
+  }
+  let home = FileManager.default.homeDirectoryForCurrentUser.path
+  let config = env["XDG_CONFIG_HOME"] ?? "\(home)/.config"
+  let path = "\(config)/fmsh/instructions.md"
+  return (try? String(contentsOfFile: path, encoding: .utf8)) ?? defaultInstructions
+}
+
+@Generable
+struct Command {
+  @Guide(description: "A complete command line that runs as typed, for example: ls -d */")
+  var line: String
+}
+
 @Generable
 struct Suggestions {
-  @Guide(
-    description: "Distinct complete one-line shell commands, most likely first", .maximumCount(3))
-  var commands: [String]
+  @Guide(description: "Up to three candidate commands, best first", .maximumCount(3))
+  var commands: [Command]
 }
 
 var args = Array(CommandLine.arguments.dropFirst())
@@ -46,21 +66,27 @@ guard case .available = model.availability else {
 let shell =
   (ProcessInfo.processInfo.environment["SHELL"] ?? "zsh").split(separator: "/").last ?? "zsh"
 let head = prefix.trimmingCharacters(in: .whitespaces)
-var instructions = """
-  You turn a request into shell commands for \(shell) on macOS.
-  Give up to 3 distinct, complete, runnable one-line commands, most likely first.
-  Give one when only one is reasonable. Commands only, no explanation, no markdown.
-  """
+var instructions = loadInstructions().replacingOccurrences(of: "{{shell}}", with: shell)
 if !head.isEmpty { instructions += "\nEvery command starts with: \(head)" }
 
 do {
-  let session = LanguageModelSession(instructions: instructions)
   let prompt =
     notes.isEmpty ? question : "Reference notes:\n\(notes.prefix(8000))\nRequest: \(question)"
-  let reply = try await session.respond(to: prompt, generating: Suggestions.self)
+  func ask() async throws -> Suggestions {
+    let session = LanguageModelSession(model: model, instructions: instructions)
+    return try await session.respond(
+      to: prompt, generating: Suggestions.self, options: GenerationOptions(temperature: 0.2)
+    ).content
+  }
+  let reply: Suggestions
+  do {
+    reply = try await ask()
+  } catch {
+    reply = try await ask()
+  }
   var seen = Set<String>()
-  for raw in reply.content.commands {
-    let c = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+  for raw in reply.commands {
+    let c = raw.line.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !c.isEmpty, !c.contains(where: \.isNewline) else { continue }
     let cmd = head.isEmpty || c.hasPrefix(prefix) ? c : prefix + c
     if seen.insert(cmd).inserted { print(cmd) }
