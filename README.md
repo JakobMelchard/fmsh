@@ -10,6 +10,9 @@ Prints up to three candidate commands, one per line, most likely first. `-p` is 
 typed; every candidate starts with it. `-c` adds a notes file as context. Exit 2 when the model is
 unavailable. Needs macOS 26 on Apple silicon with Apple Intelligence on. Nothing leaves the machine.
 
+The instructions are the markdown file `Sources/fmsh/instructions.md`, embedded at build. Override
+them with `$FMSH_INSTRUCTIONS` or `~/.config/fmsh/instructions.md`; `{{shell}}` becomes the shell name.
+
 ```sh
 mkdir -p ~/.local/bin && curl -fsSL https://github.com/lilfeelz/fmsh/releases/latest/download/fmsh -o ~/.local/bin/fmsh && chmod +x ~/.local/bin/fmsh
 ```
