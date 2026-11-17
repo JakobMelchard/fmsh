@@ -14,14 +14,14 @@ unavailable. Needs macOS 26 on Apple silicon with Apple Intelligence on. Nothing
 mkdir -p ~/.local/bin && curl -fsSL https://github.com/lilfeelz/fmsh/releases/latest/download/fmsh -o ~/.local/bin/fmsh && chmod +x ~/.local/bin/fmsh
 ```
 
-zsh, ctrl-x ctrl-x: describe the command in nvim, pick the answer in fzf, it lands in the prompt.
+zsh, ctrl-x ctrl-x: type a request, pick the answer in fzf, it lands in the prompt.
 
 ```zsh
 fmsh-ask() {
-  local f=$(mktemp -t fmsh) q pick
+  local q pick
   zle -I
-  nvim "$f" </dev/tty >/dev/tty
-  q=$(<"$f"); rm -f -- "$f"
+  print -n 'ask: ' >/dev/tty
+  read -r q </dev/tty || { zle reset-prompt; return }
   [[ -n ${q//[[:space:]]/} ]] || { zle reset-prompt; return }
   pick=$(print -r -- "$q" | fmsh -p "$BUFFER" | fzf --no-sort --select-1 --exit-0) &&
     [[ -n $pick ]] && BUFFER=$pick CURSOR=$#BUFFER
