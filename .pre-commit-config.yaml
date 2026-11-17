@@ -1,0 +1,20 @@
+default_install_hook_types: [pre-commit, commit-msg, pre-push]
+default_stages: [pre-commit]
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.1
+    hooks:
+      - id: gitleaks
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.11.0.1
+    hooks:
+      - id: shellcheck
+        args: [--severity=warning]
+        exclude_types: [zsh]
+  - repo: https://github.com/JakobMelchard/.github
+    rev: hooks-v2.1.0
+    hooks:
+      - id: conventional-commit
+      - id: shell-syntax
+      - id: swift-format
+      - id: xcodegen
