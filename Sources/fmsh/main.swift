@@ -16,8 +16,14 @@ while args.count > 1, args[0] == "-p" || args[0] == "-c" {
   args.removeFirst(2)
   if flag == "-p" {
     prefix = value
-  } else if let text = try? String(contentsOfFile: value, encoding: .utf8) {
-    notes += text.replacing(/\u{1B}\[[0-9;]*m/, with: "") + "\n"
+  } else {
+    do {
+      let text = try String(contentsOfFile: value, encoding: .utf8)
+      notes += text.replacing(/\u{1B}\[[0-9;]*m/, with: "") + "\n"
+    } catch {
+      FileHandle.standardError.write(Data("fmsh: \(value): \(error.localizedDescription)\n".utf8))
+      exit(1)
+    }
   }
 }
 let request =
@@ -55,8 +61,8 @@ do {
   var seen = Set<String>()
   for raw in reply.content.commands {
     let c = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-    guard !c.isEmpty else { continue }
-    let cmd = head.isEmpty || c.hasPrefix(head) ? c : prefix + c
+    guard !c.isEmpty, !c.contains(where: \.isNewline) else { continue }
+    let cmd = head.isEmpty || c.hasPrefix(prefix) ? c : prefix + c
     if seen.insert(cmd).inserted { print(cmd) }
   }
 } catch {
