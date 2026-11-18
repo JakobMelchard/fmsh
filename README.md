@@ -1,40 +1,65 @@
 # fmsh
 
-Shell commands from Apple's on-device model.
+## Purpose
+- Demonstrates structured shell-command generation with Apple's on-device Foundation Models API.
+- Prints up to three candidates, most likely first, one command per line. Never executes suggestions.
+
+## Usage
+Requires macOS 26+, Apple silicon and Apple Intelligence enabled:
 
 ```sh
-fmsh [-p prefix] [-c notes.md]... [question]   # question on stdin when omitted
-```
-
-Prints up to three candidate commands, one per line, most likely first. `-p` is what is already
-typed; every candidate starts with it. `-c` adds a notes file as context. Exit 2 when the model is
-unavailable. Needs macOS 26 on Apple silicon with Apple Intelligence on. Nothing leaves the machine.
-
-The instructions are the markdown file `Sources/fmsh/instructions.md`, embedded at build. Override
-them with `$FMSH_INSTRUCTIONS` or `~/.config/fmsh/instructions.md`; `{{shell}}` becomes the shell name.
-
-```sh
-mkdir -p ~/.local/bin && curl -fsSL https://github.com/lilfeelz/fmsh/releases/latest/download/fmsh -o ~/.local/bin/fmsh && chmod +x ~/.local/bin/fmsh
-```
-
-zsh, ctrl-x ctrl-x: type a request, pick the answer in fzf, it lands in the prompt.
-
-```zsh
-fmsh-ask() {
-  local q pick
-  zle -I
-  print -n 'ask: ' >/dev/tty
-  read -r q </dev/tty || { zle reset-prompt; return }
-  [[ -n ${q//[[:space:]]/} ]] || { zle reset-prompt; return }
-  pick=$(print -r -- "$q" | fmsh -p "$BUFFER" | fzf --no-sort --select-1 --exit-0) &&
-    [[ -n $pick ]] && BUFFER=$pick CURSOR=$#BUFFER
-  zle reset-prompt
-}
-zle -N fmsh-ask
-bindkey '^X^X' fmsh-ask
-```
-
-```sh
-brew install prek && prek install
+git clone https://github.com/lilfeelz/fmsh.git
+cd fmsh
 swift build -c release
+.build/release/fmsh 'find files larger than 100 MB'
+printf '%s\n' 'list hidden files' | .build/release/fmsh
 ```
+
+- Syntax: `fmsh [-p prefix] [-c notes.md]... [question]`; reads stdin when question is omitted.
+- `-p` preserves a command prefix; repeated `-c` adds notes, limited to 8,000 characters in the prompt.
+- Instructions: `Sources/fmsh/instructions.md`, embedded at build; `{{shell}}` expands to the shell name.
+- Override via `FMSH_INSTRUCTIONS` (file path), then `$XDG_CONFIG_HOME/fmsh/instructions.md` (default `~/.config`).
+- Exit codes: `1` invalid input/file read; `2` model unavailable; `3` generation failed after one retry.
+- Generation uses the on-device model, not a remote API. Candidates are not validated and may be invalid or unsafe; review before running.
+
+Install the released binary:
+
+```sh
+mkdir -p ~/.local/bin
+curl -fsSL https://github.com/lilfeelz/fmsh/releases/latest/download/fmsh -o ~/.local/bin/fmsh
+chmod +x ~/.local/bin/fmsh
+```
+
+Add `~/.local/bin` to `PATH`; invoke `fmsh` directly or pipe its output to a command picker.
+
+## Layout
+```text
+Sources/fmsh/fmsh.swift       # parse input, prompt model, normalize candidates
+Sources/fmsh/instructions.md  # embedded default model instructions
+Plugins/EmbedInstructions/   # Swift build-tool plugin
+Scripts/embed-instructions.sh # generates the embedded Swift string
+Tests/fmshTests/              # parsing, prompts, normalization and ANSI tests
+.github/workflows/           # macOS CI, hooks, release binary and review automation
+```
+
+## Operate
+- Owner: lilfeelz. Local CLI, no server or deployment service.
+- Deploy: build locally or install the release asset above.
+- Rollback: replace the binary with a previously downloaded release; no built-in rollback command.
+- CI: macOS 26 release build and model-availability smoke test, plus shared hooks; model-unavailable exit `2` is accepted.
+- Release-please owns versioning; release workflow builds and attaches `fmsh` to the GitHub release.
+
+```sh
+swift test
+swift build -c release
+swift format lint --strict --recursive Sources Tests Plugins
+prek run --all-files
+```
+
+## Dependencies
+- Swift 6.2+ / macOS 26 SDK, Foundation and FoundationModels; no external Swift packages.
+- Apple Intelligence model availability depends on hardware, settings and model download.
+- Development hooks: prek and tools declared in `.pre-commit-config.yaml`.
+
+## Status
+- Live: released CLI with deterministic unit tests; useful model output depends on local availability. Planned: retain as an on-device AI showcase.
