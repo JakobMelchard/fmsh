@@ -18,7 +18,7 @@ printf '%s\n' 'list hidden files' | .build/release/fmsh
 - Syntax: `fmsh [-p prefix] [-c notes.md]... [question]`; reads stdin when question is omitted.
 - `-p` preserves a command prefix; repeated `-c` adds notes, limited to 8,000 characters in the prompt.
 - Instructions: `Sources/fmsh/instructions.md`, embedded at build; `{{shell}}` expands to the shell name.
-- Override via `FMSH_INSTRUCTIONS` (file path), then `$XDG_CONFIG_HOME/fmsh/instructions.md` (default `~/.config`).
+- Override: nonempty `FMSH_INSTRUCTIONS` (file path) takes precedence and exits `1` if unreadable; otherwise use `$XDG_CONFIG_HOME/fmsh/instructions.md` (default `~/.config`) when readable, else embedded defaults.
 - Exit codes: `1` invalid input/file read; `2` model unavailable; `3` generation failed after one retry.
 - Generation uses the on-device model, not a remote API. Candidates are not validated and may be invalid or unsafe; review before running.
 
