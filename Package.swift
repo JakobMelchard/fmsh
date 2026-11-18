@@ -10,6 +10,11 @@ let package = Package(
       swiftSettings: [.treatAllWarnings(as: .error)],
       plugins: ["EmbedInstructions"]
     ),
+    .testTarget(
+      name: "fmshTests",
+      dependencies: ["fmsh"],
+      swiftSettings: [.treatAllWarnings(as: .error)]
+    ),
     .plugin(name: "EmbedInstructions", capability: .buildTool()),
   ]
 )
